@@ -4,7 +4,7 @@
 module Hack.Handler.Hyena (run) where
 
 import Hack as Hack
-import Hack.Utils
+import Hack.Contrib.Utils
 
 import Hyena.Server
 import Network.Wai as Wai
