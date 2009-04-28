@@ -1,8 +1,8 @@
 Name:                 hack-handler-hyena
-Version:              2009.4.30
+Version:              2009.4.51
 Build-type:           Simple
-Synopsis:             Hyena Kibro handler
-Description:          Hyena Kibro handler
+Synopsis:             Hyena hack handler
+Description:          Hyena hack handler
 License:              GPL
 License-file:         LICENSE
 Author:               Wang, Jinjing
@@ -15,7 +15,7 @@ data-files:           readme.md, changelog.md
 
 library
   ghc-options: -Wall
-  build-depends: base, cgi, network, bytestring, data-default >= 0.2,  mps >= 2009.4.21, hack >= 2009.4.30, hack-contrib >= 2009.4.30, hyena
+  build-depends: base, cgi, network, bytestring, data-default >= 0.2, hack >= 2009.4.51, hyena, containers
   hs-source-dirs: src/
   exposed-modules:  
                     Hack.Handler.Hyena

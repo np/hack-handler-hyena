@@ -4,20 +4,24 @@
 module Hack.Handler.Hyena (run) where
 
 import Hack as Hack
-import Hack.Contrib.Utils
-
 import Hyena.Server
 import Network.Wai as Wai
 
-import Data.Default
+
 import Prelude hiding ((.), (^))
-import MPSUTF8 hiding (to_s)
 import System.IO
+import Control.Monad
+
+import Data.Default
+import Data.Maybe
+import Data.Char
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString as S
+import qualified Data.Map as M
 
-import Control.Monad
-import Data.Maybe
+(.) :: a -> (a -> b) -> b
+a . f = f a
+infixl 9 .
 
 to_s :: S.ByteString -> String
 to_s = C.unpack
@@ -26,24 +30,22 @@ to_b :: String -> S.ByteString
 to_b = C.pack
 
 both_to_s :: (S.ByteString, S.ByteString) -> (String, String)
-both_to_s (a,b) = (a.to_s, b.to_s)
+both_to_s (x,y) = (to_s x, to_s y)
 
 both_to_b :: (String, String) -> (S.ByteString, S.ByteString)
-both_to_b (a,b) = (a.to_b, b.to_b)
+both_to_b (x,y) = (to_b x, to_b y)
 
 hyena_env_to_hack_env :: Environment -> IO Hack.Env
 hyena_env_to_hack_env e = return $
   def
     {   
-       request_method = e.requestMethod.show.upper.read
+       request_method = requestMethod.show.map toUpper.read
     ,  script_name    = e.scriptName.to_s
     ,  path_info      = e.pathInfo.to_s
     ,  query_string   = e.queryString .fromMaybe (to_b "") .to_s
     ,  http           = e.Wai.headers .map both_to_s
     ,  hack_errors    = e.errors
     }
-
--- hack_response_to_hyena_response :: Hack.Response -> (Int, S.ByteString, Headers, Enumerator)
 
 enum_string :: String -> IO Enumerator
 enum_string msg = do
@@ -61,7 +63,7 @@ type WaiResponse = (Int, S.ByteString, Wai.Headers, Enumerator)
 hack_response_to_hyena_response :: Enumerator -> Hack.Response -> WaiResponse
 hack_response_to_hyena_response e r =
     (   r.status
-    ,   r.status.show_status_code.fromMaybe "OK" .to_b
+    ,   r.status.show_status_message.fromMaybe "OK" .to_b
     ,   r.Hack.headers.map both_to_b
     ,   e
     )
@@ -80,3 +82,53 @@ hack_to_wai app env = do
 
 run :: Hack.Application -> IO ()
 run app = app.hack_to_wai.serve
+
+
+show_status_message :: Int -> Maybe String
+show_status_message x = status_code.M.lookup x
+
+
+status_code :: M.Map Int String
+status_code =
+  [  x       100          "Continue"
+  ,  x       101          "Switching Protocols"
+  ,  x       200          "OK"
+  ,  x       201          "Created"
+  ,  x       202          "Accepted"
+  ,  x       203          "Non-Authoritative Information"
+  ,  x       204          "No Content"
+  ,  x       205          "Reset Content"
+  ,  x       206          "Partial Content"
+  ,  x       300          "Multiple Choices"
+  ,  x       301          "Moved Permanently"
+  ,  x       302          "Found"
+  ,  x       303          "See Other"
+  ,  x       304          "Not Modified"
+  ,  x       305          "Use Proxy"
+  ,  x       307          "Temporary Redirect"
+  ,  x       400          "Bad Request"
+  ,  x       401          "Unauthorized"
+  ,  x       402          "Payment Required"
+  ,  x       403          "Forbidden"
+  ,  x       404          "Not Found"
+  ,  x       405          "Method Not Allowed"
+  ,  x       406          "Not Acceptable"
+  ,  x       407          "Proxy Authentication Required"
+  ,  x       408          "Request Timeout"
+  ,  x       409          "Conflict"
+  ,  x       410          "Gone"
+  ,  x       411          "Length Required"
+  ,  x       412          "Precondition Failed"
+  ,  x       413          "Request Entity Too Large"
+  ,  x       414          "Request-URI Too Large"
+  ,  x       415          "Unsupported Media Type"
+  ,  x       416          "Requested Range Not Satisfiable"
+  ,  x       417          "Expectation Failed"
+  ,  x       500          "Internal Server Error"
+  ,  x       501          "Not Implemented"
+  ,  x       502          "Bad Gateway"
+  ,  x       503          "Service Unavailable"
+  ,  x       504          "Gateway Timeout"
+  ,  x       505          "HTTP Version Not Supported"
+  ] .M.fromList
+  where x a b = (a, b)
