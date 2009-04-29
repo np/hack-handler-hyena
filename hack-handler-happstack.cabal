@@ -1,4 +1,8 @@
+<<<<<<< HEAD:hack-handler-hyena.cabal
 Name:                 hack-handler-hyena
+=======
+Name:                 hack-handler-happstack
+>>>>>>> 7220312cc42868b47f908c3e96005ebe2a43fb5e:hack-handler-happstack.cabal
 Version:              2009.4.51
 Build-type:           Simple
 Synopsis:             Hyena hack handler
@@ -15,8 +19,12 @@ data-files:           readme.md, changelog.md
 
 library
   ghc-options: -Wall
+<<<<<<< HEAD:hack-handler-hyena.cabal
   build-depends: base, cgi, network, bytestring, data-default >= 0.2, hack >= 2009.4.51, hyena, containers
+=======
+  build-depends: base, cgi, network, bytestring, data-default >= 0.2, hack >= 2009.4.30, hack-contrib >= 2009.4.50, happstack-server, containers, mtl
+>>>>>>> 7220312cc42868b47f908c3e96005ebe2a43fb5e:hack-handler-happstack.cabal
   hs-source-dirs: src/
   exposed-modules:  
-                    Hack.Handler.Hyena
+                    Hack.Handler.Happstack
                     

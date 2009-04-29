@@ -8,11 +8,4 @@
 2009.4.50
 ---------
 
-### Fix
-
-* use show_status_message in Utils
-
-2009.4.30
------------
-
 Init
