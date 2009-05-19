@@ -3,7 +3,7 @@
 
 module Hack.Handler.Hyena (run) where
 
-import Hack as Hack
+import qualified Hack as Hack
 import Hyena.Server
 import Network.Wai as Wai
 
@@ -17,6 +17,7 @@ import Data.Maybe
 import Data.Char
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString as S
+import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.Map as M
 
 (.) :: a -> (a -> b) -> b
@@ -39,17 +40,17 @@ hyena_env_to_hack_env :: Environment -> IO Hack.Env
 hyena_env_to_hack_env e = return $
   def
     {   
-       request_method = requestMethod.show.map toUpper.read
-    ,  script_name    = e.scriptName.to_s
-    ,  path_info      = e.pathInfo.to_s
-    ,  query_string   = e.queryString .fromMaybe (to_b "") .to_s
-    ,  http           = e.Wai.headers .map both_to_s
-    ,  hack_errors    = e.errors
+       Hack.requestMethod = requestMethod.show.map toUpper.read
+    ,  Hack.scriptName    = e.scriptName.to_s
+    ,  Hack.pathInfo      = e.pathInfo.to_s
+    ,  Hack.queryString   = e.queryString .fromMaybe (to_b "") .to_s
+    ,  Hack.http           = e.Wai.headers .map both_to_s
+    ,  Hack.hackErrors    = e.errors
     }
 
-enum_string :: String -> IO Enumerator
+enum_string :: L.ByteString -> IO Enumerator
 enum_string msg = do
-  let s = msg.to_b
+  let s = msg.L.unpack.to_b
   let yieldBlock f z = do
          z' <- f z s
          case z' of
@@ -62,8 +63,8 @@ type WaiResponse = (Int, S.ByteString, Wai.Headers, Enumerator)
 
 hack_response_to_hyena_response :: Enumerator -> Hack.Response -> WaiResponse
 hack_response_to_hyena_response e r =
-    (   r.status
-    ,   r.status.show_status_message.fromMaybe "OK" .to_b
+    (   r.Hack.status
+    ,   r.Hack.status.show_status_message.fromMaybe "OK" .to_b
     ,   r.Hack.headers.map both_to_b
     ,   e
     )
@@ -75,7 +76,7 @@ hack_to_wai app env = do
   
   r <- app hack_env
   
-  enum <- r.body.enum_string
+  enum <- r.Hack.body.enum_string
   let hyena_response = r.hack_response_to_hyena_response enum
   
   return hyena_response

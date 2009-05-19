@@ -43,7 +43,7 @@ end
 
 desc "console"
 task :console do
-  sh 'cd src; ghci Panda/Controller/Application.hs'
+  sh 'ghci -isrc src/Hack/Handler/Hyena.hs'
 end
 
 desc "clean refresh"
