@@ -1,0 +1,36 @@
+nemesis = do
+  
+  clean
+    [ "**/*.hi"
+    , "**/*.o"
+    , "manifest"
+    , "main"
+    , "nemesis-tmp.*"
+    , "Test"
+    ]
+  
+
+  desc "prepare cabal dist"
+  task "dist" $ do
+    sh "cabal clean"
+    sh "cabal configure"
+    sh "cabal sdist"
+
+
+  desc "put all .hs files in manifest"
+  task "manifest" $ do
+    sh "find . | grep 'hs$' > manifest"
+
+
+  desc "start console"
+  task "i" (sh "ghci -isrc src/Hack/Handler/Hyena.hs")
+
+  desc "test"
+  task "test" $ do
+    sh "ghc --make -isrc src/Test.hs -o Test"
+    sh "echo ready..."
+    sh "./Test"
+  
+  desc "show sloc"
+  task "stat" $ do
+    sh "cloc -match-f=hs$ --quiet src"

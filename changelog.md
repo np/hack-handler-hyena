@@ -1,3 +1,10 @@
+2009.6.23
+---------
+
+### Feature
+
+* compatible with hack 5.19 and hyena 0.1
+
 2009.5.19
 ---------
 

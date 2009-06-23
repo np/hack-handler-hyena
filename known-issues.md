@@ -1,0 +1,1 @@
+* there is a bug in the handler, which prevents hack to server large binary files, e.g. `Hack.Contrib.Middleware.Static` won't work properly

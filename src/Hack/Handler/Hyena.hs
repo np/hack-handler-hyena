@@ -40,13 +40,22 @@ hyena_env_to_hack_env :: Environment -> IO Hack.Env
 hyena_env_to_hack_env e = return $
   def
     {   
-       Hack.requestMethod = requestMethod.show.map toUpper.read
+       Hack.requestMethod = convertRequestMethod (e.requestMethod)
     ,  Hack.scriptName    = e.scriptName.to_s
     ,  Hack.pathInfo      = e.pathInfo.to_s
     ,  Hack.queryString   = e.queryString .fromMaybe (to_b "") .to_s
-    ,  Hack.http           = e.Wai.headers .map both_to_s
+    ,  Hack.http          = e.Wai.headers .map both_to_s
     ,  Hack.hackErrors    = e.errors
     }
+  where
+    convertRequestMethod Wai.Options     =     Hack.OPTIONS
+    convertRequestMethod Wai.Get         =     Hack.GET
+    convertRequestMethod Wai.Head        =     Hack.HEAD
+    convertRequestMethod Wai.Post        =     Hack.POST
+    convertRequestMethod Wai.Put         =     Hack.PUT
+    convertRequestMethod Wai.Delete      =     Hack.DELETE
+    convertRequestMethod Wai.Trace       =     Hack.TRACE
+    convertRequestMethod Wai.Connect     =     Hack.CONNECT
 
 enum_string :: L.ByteString -> IO Enumerator
 enum_string msg = do
