@@ -1,3 +1,7 @@
+### Note
+
+The hyena handler is not complete, i.e. the request body is not preserved. Patch needed to convert an enumerable to lazy bytestring :)
+
 ### Config
 
 to use a different port, start with
@@ -10,7 +14,7 @@ Also use runWithConfig to put your custom port into Env, otherwise, your app won
 
     runWithConfig (def {port = 3456}) your_app
 
-### Important note
+### In practice
 
 You must set content-length in response explicitly, e.g. use the conetnt_length middleware
 
