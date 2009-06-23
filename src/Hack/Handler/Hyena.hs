@@ -1,7 +1,7 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ImpredicativeTypes #-}
 
-module Hack.Handler.Hyena (run) where
+module Hack.Handler.Hyena (run, runWithConfig, ServerConf(..)) where
 
 import qualified Hack as Hack
 import Hyena.Server
@@ -24,6 +24,13 @@ import qualified Data.Map as M
 a . f = f a
 infixl 9 .
 
+-- | this won't change the port or servername for hyena, use
+--   ./main -p 3000 to configure port
+--   this just make sure port and serverName are presented in Env
+data ServerConf = ServerConf { port :: Int, serverName :: String }
+instance Default ServerConf where
+  def = ServerConf { port = 3000, serverName = "localhost" }
+
 to_s :: S.ByteString -> String
 to_s = C.unpack
 
@@ -36,8 +43,8 @@ both_to_s (x,y) = (to_s x, to_s y)
 both_to_b :: (String, String) -> (S.ByteString, S.ByteString)
 both_to_b (x,y) = (to_b x, to_b y)
 
-hyena_env_to_hack_env :: Environment -> IO Hack.Env
-hyena_env_to_hack_env e = return $
+hyena_env_to_hack_env :: ServerConf -> Environment -> IO Hack.Env
+hyena_env_to_hack_env conf e = return $
   def
     {   
        Hack.requestMethod = convertRequestMethod (e.requestMethod)
@@ -46,6 +53,8 @@ hyena_env_to_hack_env e = return $
     ,  Hack.queryString   = e.queryString .fromMaybe (to_b "") .to_s
     ,  Hack.http          = e.Wai.headers .map both_to_s
     ,  Hack.hackErrors    = e.errors
+    ,  Hack.serverPort    = conf.port
+    ,  Hack.serverName    = conf.serverName
     }
   where
     convertRequestMethod Wai.Options     =     Hack.OPTIONS
@@ -79,9 +88,9 @@ hack_response_to_hyena_response e r =
     )
 
 
-hack_to_wai :: Hack.Application -> Wai.Application
-hack_to_wai app env = do
-  hack_env <- env.hyena_env_to_hack_env
+hack_to_wai_with_config :: ServerConf -> Hack.Application -> Wai.Application
+hack_to_wai_with_config conf app env = do
+  hack_env <- env.hyena_env_to_hack_env conf
   
   r <- app hack_env
   
@@ -91,7 +100,10 @@ hack_to_wai app env = do
   return hyena_response
 
 run :: Hack.Application -> IO ()
-run app = app.hack_to_wai.serve
+run app = runWithConfig def app
+
+runWithConfig :: ServerConf -> Hack.Application -> IO ()
+runWithConfig conf app = app.hack_to_wai_with_config conf .serve
 
 
 show_status_message :: Int -> Maybe String
