@@ -3,7 +3,7 @@ Version:              2009.6.23.1
 Build-type:           Simple
 Synopsis:             Hyena hack handler
 Description:          Hyena hack handler
-License:              GPL
+License:              BSD3
 License-file:         LICENSE
 Author:               Wang, Jinjing
 Maintainer:           Wang, Jinjing <nfjinjing@gmail.com>
