@@ -27,7 +27,7 @@ nemesis = do
 
   desc "test"
   task "test" $ do
-    sh "ghc --make -isrc src/Test.hs -o Test"
+    sh "ghc --make -threaded -isrc src/Test.hs -o Test"
     sh "echo ready..."
     sh "./Test"
   
