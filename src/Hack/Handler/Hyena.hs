@@ -49,7 +49,7 @@ both_to_b (x,y) = (to_b x, to_b y)
 
 hyena_env_to_hack_env :: ServerConf -> Environment -> IO Hack.Env
 hyena_env_to_hack_env conf e = do
-  i <- (L.fromChunks <$> e.Wai.input .enumToList)
+  -- i <- (L.fromChunks <$> e.Wai.input .enumToList)
   return def
     {   
        Hack.requestMethod = convertRequestMethod (e.requestMethod)
@@ -60,7 +60,7 @@ hyena_env_to_hack_env conf e = do
     ,  Hack.hackErrors    = e.errors
     ,  Hack.serverPort    = conf.port
     ,  Hack.serverName    = conf.serverName
-    ,  Hack.hackInput     = i
+    -- ,  Hack.hackInput     = i
     }
   where
     convertRequestMethod Wai.Options     =     Hack.OPTIONS
