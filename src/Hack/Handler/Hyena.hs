@@ -15,10 +15,14 @@ import Control.Monad
 import Data.Default
 import Data.Maybe
 import Data.Char
+import Control.Applicative ((<$>))
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.Map as M
+
+import Control.Concurrent (forkIO)
+import Control.Concurrent.Chan (newChan,writeChan,getChanContents)
 
 (.) :: a -> (a -> b) -> b
 a . f = f a
@@ -44,8 +48,9 @@ both_to_b :: (String, String) -> (S.ByteString, S.ByteString)
 both_to_b (x,y) = (to_b x, to_b y)
 
 hyena_env_to_hack_env :: ServerConf -> Environment -> IO Hack.Env
-hyena_env_to_hack_env conf e = return $
-  def
+hyena_env_to_hack_env conf e = do
+  i <- (L.fromChunks <$> e.Wai.input .enumToList)
+  return def
     {   
        Hack.requestMethod = convertRequestMethod (e.requestMethod)
     ,  Hack.scriptName    = e.scriptName.to_s
@@ -55,6 +60,7 @@ hyena_env_to_hack_env conf e = return $
     ,  Hack.hackErrors    = e.errors
     ,  Hack.serverPort    = conf.port
     ,  Hack.serverName    = conf.serverName
+    ,  Hack.hackInput     = i
     }
   where
     convertRequestMethod Wai.Options     =     Hack.OPTIONS
@@ -65,6 +71,15 @@ hyena_env_to_hack_env conf e = return $
     convertRequestMethod Wai.Delete      =     Hack.DELETE
     convertRequestMethod Wai.Trace       =     Hack.TRACE
     convertRequestMethod Wai.Connect     =     Hack.CONNECT
+    
+    enumToList enum = do 
+      ch <- newChan
+      _ <- forkIO $ enum (writer ch) ()
+      getChanContents ch
+      where
+        writer ch () chunk = do
+          writeChan ch chunk
+          return (Right ())
 
 enum_string :: L.ByteString -> IO Enumerator
 enum_string msg = do
