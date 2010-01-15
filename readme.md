@@ -18,31 +18,16 @@ Also use runWithConfig to put your custom port into Env, otherwise, your app won
 
 You must set content-length in response explicitly, e.g. use the conetnt_length middleware
 
-    import Hack
-    import Hack.Contrib.Middleware.ContentLength
-    import Hack.Contrib.Middleware.ContentType
-    import Hack.Contrib.Utils
-    import Hack.Frontend.Happstack
     import Hack.Handler.Hyena
+    import Hack.Contrib.Middleware.ContentLength
+    import Hack.Frontend.Happstack
     import Network.Gitit
-
-
-    default_content_type :: String
-    default_content_type = "text/plain; charset=UTF-8"
-
-    stack :: [Middleware]
-    stack = 
-      [  dummy_middleware
-      -- completeness
-      ,  content_length
-      ,  content_type default_content_type
-      ]
 
     main = do
       conf <- getDefaultConfig
       createStaticIfMissing conf
       createTemplateIfMissing conf
       createRepoIfMissing conf
-      initializeGititState (userFile conf) (pluginModules conf)
-      run $ use stack $ serverPartToApp (wikiHandler conf)
+      initializeGititState conf
+      run . content_length $ serverPartToApp (wiki conf)
     
