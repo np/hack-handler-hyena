@@ -49,7 +49,7 @@ both_to_b (x,y) = (to_b x, to_b y)
 
 hyena_env_to_hack_env :: ServerConf -> Environment -> IO Hack.Env
 hyena_env_to_hack_env conf e = do
-  -- i <- (L.fromChunks <$> e.Wai.input .enumToList)
+  i <- (L.fromChunks <$> (e.Wai.input .enumToList))
   return def
     {   
        Hack.requestMethod = convertRequestMethod (e.requestMethod)
@@ -60,7 +60,7 @@ hyena_env_to_hack_env conf e = do
     ,  Hack.hackErrors    = e.errors
     ,  Hack.serverPort    = conf.port
     ,  Hack.serverName    = conf.serverName
-    -- ,  Hack.hackInput     = i
+    ,  Hack.hackInput     = i
     }
   where
     convertRequestMethod Wai.Options     =     Hack.OPTIONS
@@ -71,26 +71,22 @@ hyena_env_to_hack_env conf e = do
     convertRequestMethod Wai.Delete      =     Hack.DELETE
     convertRequestMethod Wai.Trace       =     Hack.TRACE
     convertRequestMethod Wai.Connect     =     Hack.CONNECT
-    
-    enumToList enum = do 
-      ch <- newChan
-      _ <- forkIO $ enum (writer ch) ()
-      getChanContents ch
-      where
-        writer ch () chunk = do
-          writeChan ch chunk
-          return (Right ())
 
-enum_string :: L.ByteString -> IO Enumerator
-enum_string msg = do
-  let s = msg.L.unpack.to_b
-  let yieldBlock f z = do
-         z' <- f z s
-         case z' of
-           Left z''  -> return z''
-           Right z'' -> return z''
+-- GHC 6.10 fails to accept this signature :(
+--   enumToList :: Enumerator -> IO [S.ByteString]
+enumToList :: ((() -> S.ByteString -> IO (Either () ())) -> () -> IO ())
+           -> IO [S.ByteString]
+enumToList enum =
+  do ch <- newChan
+     forkIO $ enum (writer ch) () >> writeChan ch Nothing
+     xs <- getChanContents ch
+     return $ map fromJust $ takeWhile isJust xs
+  where writer ch () chunk = do writeChan ch (Just chunk)
+                                return (Right ())
 
-  return yieldBlock
+listToEnum :: [S.ByteString] -> Enumerator
+listToEnum []     _ z = return z
+listToEnum (x:xs) f z = f z x >>= either return (listToEnum xs f)
 
 type WaiResponse = (Int, S.ByteString, Wai.Headers, Enumerator)
 
@@ -109,8 +105,8 @@ hack_to_wai_with_config conf app env = do
   
   r <- app hack_env
   
-  enum <- r.Hack.body.enum_string
-  let hyena_response = r.hack_response_to_hyena_response enum
+  let enum           = r.Hack.body.L.toChunks.listToEnum
+      hyena_response = r.hack_response_to_hyena_response enum
   
   return hyena_response
 
